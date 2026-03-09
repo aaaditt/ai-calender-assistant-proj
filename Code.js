@@ -1,5 +1,5 @@
 const GROQ_API_KEY = 'YOUR_GROQ_API_KEY';
-const PERSONAL_CALENDAR_ID = 'aaditchandra2212@gmail.com';
+const PERSONAL_CALENDAR_ID = 'YOUR_EMAIL@gmail.com';
 
 // ─── EMAIL SCANNING ───────────────────────────────────────────────────────────
 

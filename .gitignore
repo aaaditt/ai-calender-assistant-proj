@@ -1,0 +1,15 @@
+# Google Apps Script ignores
+.clasp.json
+~/.clasprc.json
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
