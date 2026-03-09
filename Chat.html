@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AI Calendar Assistant</title>
+  <style>
+    :root {
+      --bg-dark: #0f111a;
+      --panel-bg: #1a1c2e;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #2e324e;
+      --user-msg: #6366f1;
+      --bot-msg: #1e213a;
+      --font-size-base: 16px;
+      --font-size-sm: 0.875rem;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      line-height: 1.6;
+    }
+
+    *:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .header {
+      padding: 1.25rem 1.5rem;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    .header-icon { font-size: 2rem; }
+
+    .header-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .header-text p {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+    }
+
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .chat-container::-webkit-scrollbar { width: 6px; }
+    .chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    .message {
+      max-width: 85%;
+      padding: 1rem 1.25rem;
+      border-radius: 1.25rem;
+      font-size: var(--font-size-base);
+      word-wrap: break-word;
+      animation: slideIn 0.3s ease-out;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      line-height: 1.6;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      background: var(--user-msg);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 0.25rem;
+    }
+
+    .message.assistant {
+      background: var(--bot-msg);
+      color: var(--text-main);
+      align-self: flex-start;
+      border-bottom-left-radius: 0.25rem;
+      border: 1px solid var(--border);
+    }
+
+    .message.typing {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 0.5rem 1rem;
+      box-shadow: none;
+    }
+
+    .suggestions-container {
+      padding: 0.5rem 1.5rem 1rem;
+      overflow-x: auto;
+      flex-shrink: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .suggestions {
+      display: flex;
+      gap: 0.75rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .suggestion {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 0.6rem 1.25rem;
+      font-size: var(--font-size-sm);
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .suggestion:hover, .suggestion:active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .input-area {
+      padding: 1.25rem 1.5rem;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .input-wrapper { flex: 1; }
+
+    textarea {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1.5px solid var(--border);
+      border-radius: 1rem;
+      color: white;
+      padding: 0.875rem 1rem;
+      font-size: var(--font-size-base);
+      resize: none;
+      outline: none;
+      max-height: 150px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: #4b5563; }
+
+    button {
+      background: var(--accent);
+      border: none;
+      border-radius: 1rem;
+      color: white;
+      width: 3.25rem;
+      height: 3.25rem;
+      cursor: pointer;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    button:hover { background: var(--accent-hover); transform: scale(1.05); }
+    button:active { transform: scale(0.95); }
+    button:disabled { background: #334155; cursor: not-allowed; opacity: 0.6; }
+
+    @media (min-width: 768px) {
+      :root { --font-size-base: 18px; }
+      .message { max-width: 70%; }
+      .header { padding: 1.5rem 3rem; }
+      .chat-container { padding: 2rem 3rem; }
+      .input-area { padding: 1.5rem 3rem; }
+      .suggestions-container { padding: 0.5rem 3rem 1rem; }
+    }
+
+    @media (min-width: 1024px) {
+      .message { max-width: 60%; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-icon">🤖</div>
+  <div class="header-text">
+    <h1>AI Calendar Assistant</h1>
+    <p>Manages your university schedule</p>
+  </div>
+</header>
+
+<main class="chat-container" id="chat">
+  <div class="message assistant">
+    Hey Aadit! 👋 How can I help you today?
+  </div>
+</main>
+
+<aside class="suggestions-container">
+  <div class="suggestions">
+    <div class="suggestion" onclick="sendSuggestion(this)">📅 This week's schedule</div>
+    <div class="suggestion" onclick="sendSuggestion(this)">📧 Scan emails</div>
+    <div class="suggestion" onclick="sendSuggestion(this)">➕ Add event</div>
+    <div class="suggestion" onclick="sendSuggestion(this)">🗑️ Delete event</div>
+  </div>
+</aside>
+
+<footer class="input-area">
+  <div class="input-wrapper">
+    <textarea id="input" placeholder="Ask me anything about your calendar..." rows="1" aria-label="Message input"></textarea>
+  </div>
+  <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">➤</button>
+</footer>
+
+<script>
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('sendBtn');
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+  });
+
+  function sendSuggestion(el) {
+    input.value = el.textContent.replace(/^[^\w\📅\📧\➕\🗑️]+/, '').trim();
+    sendMessage();
+  }
+
+  function addMessage(text, role) {
+    const div = document.createElement('div');
+    div.className = 'message ' + role;
+
+    if (role === 'typing') {
+      div.textContent = text;
+    } else {
+      const formatted = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>')
+        .replace(/(\d+\.)\s/g, '<br>$1 ');
+      div.innerHTML = formatted;
+    }
+
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, 'user');
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    const typing = addMessage('Thinking...', 'assistant typing');
+
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          typing.remove();
+          addMessage(response, 'assistant');
+          sendBtn.disabled = false;
+        })
+        .withFailureHandler(function(err) {
+          typing.remove();
+          addMessage('Sorry, something went wrong: ' + err.message, 'assistant');
+          sendBtn.disabled = false;
+        })
+        .processChat(text);
+    } else {
+      setTimeout(() => {
+        typing.remove();
+        addMessage('Local testing mode — backend not connected.', 'assistant');
+        sendBtn.disabled = false;
+      }, 1000);
+    }
+  }
+</script>
+
+</body>
+</html>
